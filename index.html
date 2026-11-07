@@ -3,21 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>محاسبه‌گر امتیاز و تعرفه عملکرد پرستاری - نسخه 2.5.2</title>
+<title>محاسبه‌گر امتیاز و تعرفه عملکرد پرستاری - نسخه 2.5.3</title>
 
-<!-- متادیتای اختصاصی میانبر، آیکون و وب‌اپلیکیشن (PWA / Add to Home Screen) -->
-<meta name="application-name" content="محاسبه‌گر تعرفه پرستاری">
-<meta name="apple-mobile-web-app-title" content="محاسبه‌گر تعرفه پرستاری">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- تنظیمات آیکون و وب‌اپلیکیشن (افزودن به صفحه اصلی / Add to Home Screen) -->
 <meta name="theme-color" content="#143e79">
-
-<!-- آیکون اختصاصی هوم اسکرین و فیوآیکون -->
-<link rel="icon" type="image/jpeg" href="icon.jpg">
-<link rel="shortcut icon" type="image/jpeg" href="icon.jpg">
-<link rel="apple-touch-icon" href="icon.jpg">
-<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="تعرفه پرستاری">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
+<link rel="apple-touch-icon" sizes="512x512" href="./icon.png">
+<link rel="manifest" href='data:application/manifest+json,%7B%22name%22%3A%22%D9%85%D8%AD%D8%A7%D8%B3%D8%A8%D9%87%E2%80%8C%DA%AF%D8%B1%20%D8%A7%D9%85%D8%AA%DB%8C%D8%A7%D8%B2%20%D9%88%20%D8%AA%D8%B9%D8%B1%D9%81%D9%87%E2%80%8C%DA%AF%D8%B0%D8%A7%D8%B1%DB%8C%20%D9%BE%D8%B1%D8%B3%D8%AA%D8%A7%D8%B1%DB%8C%22%2C%22short_name%22%3A%22%D8%AA%D8%B9%D8%B1%D9%81%D9%87%20%D9%BE%D8%B1%D8%B3%D8%AA%D8%A7%D8%B1%DB%8C%22%2C%22start_url%22%3A%22.%2F%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f7fb%22%2C%22theme_color%22%3A%22%23143e79%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22.%2Ficon.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D'>
 
 <!-- کتابخانه پشتیبانی از فایل‌های اکسل XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -118,7 +114,7 @@ tr.row-excluded td.exclude-col{text-decoration:none}
   <header class="hero">
     <h1>
       <span>محاسبه‌گر امتیاز عملکرد و تعرفه‌گذاری پرستاری</span>
-      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ۲.۵.۲</span>
+      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ۲.۵.۳</span>
     </h1>
     <p>محاسبه کمی عملکرد، ضرایب مصوب شیفت، ضریب حضور پرسنل غیرمستقیم، تفکیک واحدها و تعرفه ریالی</p>
   </header>
@@ -384,9 +380,12 @@ tr.row-excluded td.exclude-col{text-decoration:none}
 'use strict';
 const $=id=>document.getElementById(id);
 
-// کلید ذخیره‌سازی تنظیمات نسخه 2.5.2 با بازیابی خودکار از نسخه قبل
-const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_5_2:'+location.pathname;
-const PREV_SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_5_1:'+location.pathname;
+// کلید ذخیره‌سازی تنظیمات نسخه 2.5.3 (با پشتیبانی و بازیابی از نسخه‌های قبلی)
+const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_5_3:'+location.pathname;
+const PREV_SETTINGS_KEYS=[
+  'nursingPerformanceSettings_v2_5_1:'+location.pathname,
+  'nursingPerformanceSettings_v2_5:'+location.pathname
+];
 
 const scoreDefaults=[
  {name:'تریاژ سطح 1',score:11},
@@ -448,8 +447,14 @@ function loadSavedSettings(){
   let v=null;
   try{
     v=JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)||'null');
-    if(!v){
-      v=JSON.parse(localStorage.getItem(PREV_SETTINGS_STORAGE_KEY)||'null');
+    if(!validSettings(v)){
+      for(const oldKey of PREV_SETTINGS_KEYS){
+        const oldVal=JSON.parse(localStorage.getItem(oldKey)||'null');
+        if(validSettings(oldVal)){
+          v=oldVal;
+          break;
+        }
+      }
     }
   }catch(e){}
   if(!validSettings(v))v=readEmbeddedSettings();
@@ -870,7 +875,7 @@ function downloadConfiguredHtml(){
   const capsules=clone.querySelector('#deptCapsules');if(capsules)capsules.innerHTML='';
   const nurse=clone.querySelector('#nurseSelect');if(nurse)nurse.innerHTML='<option value="__ALL__">همه پرسنل ـ گزارش کلی</option>';
   const html='<!doctype html>\n'+clone.outerHTML;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='محاسبه_گر_امتیاز_پرستاری_نسخه_۲_۵_۲.html';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  const blob=new Blob([html],{type:'text/html;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='محاسبه_گر_امتیاز_پرستاری_نسخه_۲_۵_۳.html';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 $('downloadConfiguredHtml').addEventListener('click',downloadConfiguredHtml);
 $('chooseFolder').addEventListener('click',()=>$('folderInput').click());
@@ -1167,7 +1172,7 @@ function renderStats(summaries,currentRows,selected,selectedRows){
     const activeDirectTotal=activeRows.reduce((sum,r)=>sum+(r.points??0),0);
     const nonzeroCount=activeSummaries.filter(x=>Number.isFinite(x.total)&&x.total!==0).length;
 
-    appendStatRow(body,'بخش‌های تحت نمایش',isAllDepartments?'همه بخش‌های بیمارستان (کل مرکز)':[...selectedDepartments].join('، '));
+    appendStatRow(body,'بخش‌های تحت نمایش',isAllDepartments?'همه بخش‌های بیمارستان (کل مرکز)':`بخش‌های گزارش: ${[...selectedDepartments].join('، ')}`);
     appendStatRow(body,'تعداد پرسنل فعال (لحاظ‌شده در آمار)',activeSummaries.length.toLocaleString('en-US')+(excludedCount?` (${excludedCount} نفر حذف‌شده)`:''));
     appendStatRow(body,'تعداد رکوردهای عملکرد پرسنل فعال',activeRows.length.toLocaleString('en-US'));
     appendStatRow(body,'مجموع امتیاز مستقیم پرسنل فعال',fmt(activeDirectTotal));
