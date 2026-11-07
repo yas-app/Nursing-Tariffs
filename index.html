@@ -3,7 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>محاسبه‌گر امتیاز و تعرفه عملکرد پرستاری - نسخه 2.5.1</title>
+<title>محاسبه‌گر امتیاز و تعرفه عملکرد پرستاری - نسخه 2.5.2</title>
+
+<!-- متادیتای اختصاصی میانبر، آیکون و وب‌اپلیکیشن (PWA / Add to Home Screen) -->
+<meta name="application-name" content="محاسبه‌گر تعرفه پرستاری">
+<meta name="apple-mobile-web-app-title" content="محاسبه‌گر تعرفه پرستاری">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#143e79">
+
+<!-- آیکون اختصاصی هوم اسکرین و فیوآیکون -->
+<link rel="icon" type="image/jpeg" href="icon.jpg">
+<link rel="shortcut icon" type="image/jpeg" href="icon.jpg">
+<link rel="apple-touch-icon" href="icon.jpg">
+<link rel="manifest" href="manifest.json">
+
 <!-- کتابخانه پشتیبانی از فایل‌های اکسل XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -103,7 +118,7 @@ tr.row-excluded td.exclude-col{text-decoration:none}
   <header class="hero">
     <h1>
       <span>محاسبه‌گر امتیاز عملکرد و تعرفه‌گذاری پرستاری</span>
-      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ٢.۵</span>
+      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ۲.۵.۲</span>
     </h1>
     <p>محاسبه کمی عملکرد، ضرایب مصوب شیفت، ضریب حضور پرسنل غیرمستقیم، تفکیک واحدها و تعرفه ریالی</p>
   </header>
@@ -369,8 +384,9 @@ tr.row-excluded td.exclude-col{text-decoration:none}
 'use strict';
 const $=id=>document.getElementById(id);
 
-// کلید ذخیره‌سازی تنظیمات نسخه 2.5.1
-const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_5_1:'+location.pathname;
+// کلید ذخیره‌سازی تنظیمات نسخه 2.5.2 با بازیابی خودکار از نسخه قبل
+const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_5_2:'+location.pathname;
+const PREV_SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_5_1:'+location.pathname;
 
 const scoreDefaults=[
  {name:'تریاژ سطح 1',score:11},
@@ -430,7 +446,12 @@ function readEmbeddedSettings(){
 
 function loadSavedSettings(){
   let v=null;
-  try{v=JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)||'null')}catch(e){}
+  try{
+    v=JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)||'null');
+    if(!v){
+      v=JSON.parse(localStorage.getItem(PREV_SETTINGS_STORAGE_KEY)||'null');
+    }
+  }catch(e){}
   if(!validSettings(v))v=readEmbeddedSettings();
   if(!v)return {scores:scoreDefaults,shifts:shiftDefaults,enableFinancial:false,rialFactor:0,defaultQuality:1.0,attendanceFactors:{}};
   return {
@@ -473,7 +494,6 @@ let decoded=pathDecode(raw);if(decoded.startsWith('/')){let z=decoded.split('/')
 if(decoded.includes('../')){const parent=workbookRel.split('/').slice(0,-1).join('/');return normPath(parent+'/'+decoded)}
 return normPath(decoded.replace(/^\.\//,''));}
 
-// استخراج متن خالص با پشتیبانی کامل از عناصر DOM، اعداد و رشته‌ها
 function parseCell(c){
   if(c===null||c===undefined) return '';
   let text='';
@@ -485,7 +505,6 @@ function parseCell(c){
   return text.replace(/\u00a0/g,' ').replace(/[\r\n\t]+/g,' ').trim();
 }
 
-// تحلیل آرایه‌های داده بدون ورود اشیاء DOM و تضمین رشته خالص
 function parse2DArray(rows, sourceSheet=''){
   for(let ri=0;ri<rows.length;ri++){
     const rawRow=rows[ri]||[];
@@ -507,7 +526,6 @@ function parse2DArray(rows, sourceSheet=''){
       for(let r=ri+1;r<rows.length;r++){
         let rawVals=rows[r];
         if(!rawVals||!rawVals.length)continue;
-        // تبدیل تک‌تک خانه‌های ردیف به رشته متنی تمیز
         let vals=rawVals.map(parseCell);
         
         const amountText=vals[idxAmount]??'';
@@ -554,7 +572,6 @@ function readTableFromHtml(html){
   let tables=[...doc.querySelectorAll('table')];
   for(const table of tables){
     let trs=[...table.querySelectorAll('tr')].filter(tr=>tr.querySelectorAll(':scope > td, :scope > th').length>0);
-    // استخراج متنی سلول‌ها برای جلوگیری از انتقال آبجکت HTMLTableCellElement
     let cellsByRow=trs.map(tr=>[...tr.children].filter(c=>['TD','TH'].includes(c.tagName)).map(c=>parseCell(c)));
     const res=parse2DArray(cellsByRow, doc.title||'HTML');
     if(res) return res;
@@ -853,7 +870,7 @@ function downloadConfiguredHtml(){
   const capsules=clone.querySelector('#deptCapsules');if(capsules)capsules.innerHTML='';
   const nurse=clone.querySelector('#nurseSelect');if(nurse)nurse.innerHTML='<option value="__ALL__">همه پرسنل ـ گزارش کلی</option>';
   const html='<!doctype html>\n'+clone.outerHTML;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='محاسبه_گر_امتیاز_پرستاری_نسخه_۲_۵.html';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  const blob=new Blob([html],{type:'text/html;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='محاسبه_گر_امتیاز_پرستاری_نسخه_۲_۵_۲.html';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 $('downloadConfiguredHtml').addEventListener('click',downloadConfiguredHtml);
 $('chooseFolder').addEventListener('click',()=>$('folderInput').click());
