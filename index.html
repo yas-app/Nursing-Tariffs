@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="application-version" content="2.6.1">
+<title>محاسبه‌گر امتیاز و تعرفه عملکرد پرستاری - نسخه 2.6.1</title>
+
+<!-- تنظیمات آیکون و وب‌اپلیکیشن (افزودن به صفحه اصلی / Add to Home Screen) -->
+<meta name="theme-color" content="#143e79">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="تعرفه پرستاری">
+<link rel="icon" type="image/png" sizes="512x512" href="./assets/icons/icon.png">
+<link rel="apple-touch-icon" sizes="512x512" href="./assets/icons/icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+
+<!-- کتابخانه پشتیبانی از فایل‌های اکسل XLSX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Google Tag Manager / Analytics container -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-5MQH6SV3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>
+      <span>محاسبه‌گر امتیاز عملکرد و تعرفه‌گذاری پرستاری</span>
+      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ۲.۶.۱</span>
+    </h1>
+  </header>
+
+  <section class="panel">
+    <h2 class="stage-heading">
+      <span class="stage-heading-main"><span class="step">مرحله ۱</span> انتخاب پوشه یا فایل‌های عملکرد پرسنل</span>
+      <small class="stage-format">فرمت‌های مجاز: XLSX / XLS / XML / CSV</small>
+    </h2>
+    <div class="row">
+      <label class="pick"><input id="folderInput" class="filebox" type="file" webkitdirectory directory multiple><button id="chooseFolder" class="primary" type="button">انتخاب پوشه پرستاران</button></label>
+      <label class="pick"><input id="fileInput" class="filebox" type="file" multiple accept=".xlsx,.xls,.xml,.csv,.htm,.html"><button id="chooseFiles" class="secondary" type="button">انتخاب فایل (تکی یا چندتایی)</button></label>
+      <button id="calculate" class="secondary" type="button" disabled>خواندن فایل‌ها و محاسبه امتیاز</button>
+      <button id="reset" class="secondary" type="button">شروع مجدد</button>
+    </div>
+    <div id="folderStatus" class="status">هنوز پوشه یا فایلی انتخاب نشده است.</div>
+  </section>
+
+  <section class="panel settings-launcher">
+    <h2><span class="step">مرحله ۲</span> تنظیمات امتیازها و ضرایب مصوب</h2>
+    <div class="row">
+      <button id="openSettings" type="button" class="secondary">باز کردن جدول امتیاز گروه‌ها و شیفت‌ها</button>
+      <span id="settingsStatus" class="smallnote" role="status">تنظیمات در حافظه مرورگر ذخیره می‌شوند.</span>
+    </div>
+    <div class="rule-note">
+      <strong>قوانین ضرایب شیفت و حضور طبق دستورالعمل:</strong>
+      <ul style="margin:4px 0 0;padding-right:20px">
+        <li><strong>شیفت شب (ضریب ۱٫۵):</strong> گروه‌های مراقبتی 1 تا 8</li>
+        <li><strong>شیفت عصر (ضریب ۰٫۸):</strong> گروه‌های مراقبتی 1 تا 3</li>
+        <li><strong>ضریب حضور عملکرد غیرمستقیم:</strong> برای همه پرسنل غیرمستقیم در بازه <strong>۰ تا ۱٫۲۵</strong> و برای کمک‌پرستار/کمک‌بهیار در بازه <strong>۰ تا ۲</strong> اعمال می‌گردد.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- دیالوگ تنظیمات -->
+  <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsDialogTitle">
+    <div class="dialog-head">
+      <div>
+        <h2 id="settingsDialogTitle">تنظیمات امتیاز گروه‌ها و ضرایب شیفت</h2>
+        <p class="sub">ضرایب عصر و شب طبق آیین‌نامه به‌صورت شرطی اعمال می‌شوند. جدول شیفت برای صبح و سایر شیفت‌های تعریف‌شده است.</p>
+      </div>
+      <button id="closeSettings" class="secondary" type="button" aria-label="بستن پنجره">بستن</button>
+    </div>
+    <div class="settings-grid">
+      <div>
+        <div class="section-title"><b>امتیاز گروه عملکرد</b><button id="addGroup" type="button" class="secondary">+ افزودن گروه</button></div>
+        <div class="tablewrap"><table id="scoresTable"><thead><tr><th>گروه عملکرد</th><th>امتیاز</th><th>حذف</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div>
+        <div class="section-title"><b>ضریب پایه شیفت‌ها</b><button id="addShift" type="button" class="secondary">+ افزودن شیفت</button></div>
+        <div class="tablewrap"><table id="shiftsTable"><thead><tr><th>شیفت</th><th>ضریب پایه</th><th>حذف</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- پنجره پاپ‌آپ مشاهده جزئیات عملکرد پرسنل انتخابی -->
+  <dialog id="nurseModal" class="settings-dialog" aria-labelledby="nurseModalTitle">
+    <div class="dialog-head">
+      <div>
+        <h2 id="nurseModalTitle">جزئیات عملکرد پرستار</h2>
+        <p id="nurseModalSubtitle" class="sub"></p>
+      </div>
+      <button id="closeNurseModal" class="secondary" type="button" aria-label="بستن پنجره">بستن</button>
+    </div>
+    <div class="tablewrap" style="max-height:55vh">
+      <table id="nurseModalTable">
+        <thead>
+          <tr>
+            <th>بخش</th>
+            <th>گروه عملکرد</th>
+            <th>شیفت</th>
+            <th>مجموع مقدار</th>
+            <th>امتیاز گروه</th>
+            <th>ضریب شیفت</th>
+            <th>امتیاز محاسبه‌شده</th>
+            <th>تعداد رکورد</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="dialog-foot">
+      <span id="nurseModalFooterNote" class="smallnote"></span>
+      <button id="closeNurseModalBottom" class="primary" type="button">بستن پنجره</button>
+    </div>
+  </dialog>
+
+  <!-- پنجره پاپ‌آپ ریز عملکرد گروه‌ها در یک بخش -->
+  <dialog id="deptModal" class="settings-dialog" aria-labelledby="deptModalTitle">
+    <div class="dialog-head">
+      <div>
+        <h2 id="deptModalTitle">ریز عملکرد گروه‌ها در بخش</h2>
+        <p id="deptModalSubtitle" class="sub"></p>
+      </div>
+      <button id="closeDeptModal" class="secondary" type="button" aria-label="بستن پنجره">بستن</button>
+    </div>
+    <div class="tablewrap" style="max-height:55vh">
+      <table id="deptModalTable">
+        <thead>
+          <tr>
+            <th>گروه عملکرد</th>
+            <th>مجموع مقدار</th>
+            <th>امتیاز گروه</th>
+            <th>امتیاز محاسبه‌شده</th>
+            <th>تعداد رکورد</th>
+            <th>موارد بررسی</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="dialog-foot">
+      <button id="closeDeptModalBottom" class="primary" type="button">بستن پنجره</button>
+    </div>
+  </dialog>
+
+  <!-- پنجره پاپ‌آپ رکوردهای نیازمند بررسی -->
+  <dialog id="warningsModal" class="settings-dialog" aria-labelledby="warningsModalTitle">
+    <div class="dialog-head">
+      <div>
+        <h2 id="warningsModalTitle">گزارش فایل‌ها یا رکوردهای نیازمند بررسی</h2>
+        <p class="sub">فهرست رکوردهایی که گروه یا شیفت نامعتبر، خالی یا مقدار تعریف‌نشده دارند.</p>
+      </div>
+      <button id="closeWarningsModal" class="secondary" type="button" aria-label="بستن پنجره">بستن</button>
+    </div>
+    <div id="warningsModalContent" class="status warn" style="max-height:55vh;overflow:auto;margin:0;white-space:pre-line;font-size:13px;line-height:1.9"></div>
+    <div class="dialog-foot">
+      <button id="closeWarningsModalBottom" class="primary" type="button">بستن پنجره</button>
+    </div>
+  </dialog>
+
+  <section id="results" class="panel" hidden>
+    <div class="section-title"><h2 style="margin:0"><span class="step">مرحله ۳</span> گزارش امتیازها و کارکرد</h2><button id="exportSummary" class="primary" type="button">خروجی گزارش پرستاران (CSV)</button></div>
+    
+    <!-- کپسول‌های انتخاب بخش -->
+    <div class="dept-filter-bar screen-only">
+      <span class="dept-filter-label">انتخاب بخش/واحد:</span>
+      <div id="deptCapsules" class="dept-capsules-wrap"></div>
+    </div>
+    <div id="printDeptHeader" class="print-only"></div>
+
+    <!-- ماژول محاسبه ریالی تعرفه -->
+    <div class="financial-bar screen-only">
+      <div class="financial-header">
+        <input type="checkbox" id="enableFinancial" style="width:18px;height:18px;accent-color:var(--blue)">
+        <label for="enableFinancial">فعال‌سازی محاسبه ارزش ریالی تعرفه (محاسبه ناخالص عملکرد)</label>
+      </div>
+      <div id="financialInputs" class="financial-inputs" style="display:none">
+        <div class="fin-field">
+          <label for="rialFactorInput">ضریب ریالی هر امتیاز (ریال):</label>
+          <input type="text" id="rialFactorInput" placeholder="مثلاً: 25,000" style="width:130px;direction:ltr">
+        </div>
+        <div class="fin-field">
+          <label for="defaultQualityInput">ضریب کیفی پیش‌فرض:</label>
+          <input type="number" id="defaultQualityInput" value="1.0" step="0.05" min="0" max="2" style="width:75px;text-align:center">
+        </div>
+        <span class="sub" style="font-size:12px;margin-right:auto">فرمول مستقیم: امتیاز کمی × ضریب کیفی × ضریب ریالی</span>
+      </div>
+    </div>
+
+    <div id="statsSection">
+      <div class="section-title"><h2 style="margin:0">آمار توصیفی عملکرد</h2><span class="chip">خلاصه محاسبات (تنها پرسنل فعال لحاظ شده‌اند)</span></div>
+      <div class="tablewrap stats-table"><table id="statsTable"><thead><tr><th>شاخص آماری</th><th>مقدار</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="toolbar">
+      <label for="nurseSelect">نمایش جزئیات پرستار:</label>
+      <select id="nurseSelect"><option value="__ALL__">همه پرستاران ـ خلاصه</option></select>
+      <label class="screen-only" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--muted);margin-right:auto">
+        <input type="checkbox" id="printDetailToggle" style="width:17px;height:17px;accent-color:var(--blue)">
+        <span>شامل کردن جدول «جزئیات گروه و شیفت» در خروجی PDF/پرینت</span>
+      </label>
+      <button id="exportDetail" class="secondary" type="button">خروجی جزئیات گروه/شیفت (CSV)</button>
+      <button id="printReport" class="secondary" type="button">چاپ گزارش فعلی</button>
+    </div>
+
+    <div class="section-title"><h2 id="summaryTitle" style="margin:0">خلاصه امتیاز هر پرستار</h2><span class="chip">امتیاز کل = مجموع امتیاز رکوردها (برای مشاهده ریزعملکرد، روی نام هر فرد کلیک کنید)</span></div>
+    <div id="summaryTools" class="toolbar"><label for="summarySort">مرتب‌سازی جدول:</label><select id="summarySort"><option value="nameAsc">نام پرستار ـ حروف الفبا</option><option value="scoreAsc">امتیاز کل ـ از کم به زیاد</option><option value="scoreDesc">امتیاز کل ـ از زیاد به کم</option></select><button id="clearExclusions" class="secondary" type="button">پاک‌کردن همه تیک‌ها</button><span class="smallnote">تیک زدن «حذف از میانه و آمار»، امتیازات و کارکرد فرد را از کلیه آمارهای تحلیلی، مبالغ کل و میانه کسر می‌کند.</span></div>
+    
+    <div class="tablewrap">
+      <table id="summaryTable">
+        <thead>
+          <tr id="summaryTableHead">
+            <th>نام پرستار</th>
+            <th>تعداد رکورد</th>
+            <th>صبح</th>
+            <th>عصر</th>
+            <th>شب</th>
+            <th>امتیاز کل</th>
+            <th class="fin-col" style="display:none">ضریب کیفی</th>
+            <th class="fin-col" style="display:none">مبلغ کارکرد (ریال)</th>
+            <th>وضعیت</th>
+            <th class="exclude-col">حذف از میانه و آمار</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="summaryEmpty" class="empty">هنوز گزارشی محاسبه نشده است.</div>
+    </div>
+
+    <!-- آمار کل بخش‌ها -->
+    <div style="margin-top:18px" class="section-title"><h2 id="groupSummaryTitle" style="margin:0">آمار بخش‌ها / واحدها</h2><span class="chip">برای مشاهده ریز عملکرد گروه‌ها، روی نام بخش کلیک کنید</span></div>
+    <div class="tablewrap"><table id="groupSummaryTable"><thead><tr><th>بخش</th><th>مجموع مقدار</th><th>امتیاز محاسبه‌شده کل</th><th>تعداد رکورد</th><th>موارد بررسی</th></tr></thead><tbody></tbody></table><div id="groupSummaryEmpty" class="empty">بخشی برای نمایش وجود ندارد.</div></div>
+    
+    <!-- جدول جزئیات -->
+    <div id="detailSection" style="margin-top:18px">
+      <div class="section-title"><h2 id="detailTitle" style="margin:0">جزئیات گروه و شیفت</h2></div>
+      <div class="tablewrap"><table id="detailTable"><thead><tr><th>نام پرسنل</th><th>بخش</th><th>گروه عملکرد</th><th>شیفت</th><th>مجموع مقدار</th><th>امتیاز گروه</th><th>ضریب شیفت</th><th>امتیاز محاسبه‌شده</th><th>تعداد رکورد</th></tr></thead><tbody></tbody></table><div id="detailEmpty" class="empty">برای نمایش جزئیات، یک پرستار را انتخاب کن.</div></div>
+    </div>
+
+    <!-- بخش عملکرد غیرمستقیم -->
+    <div id="indirectSection" style="margin-top:18px">
+      <div class="section-title">
+        <h2 style="margin:0">امتیاز کارکنان با عملکرد غیرمستقیم بخش</h2>
+        <span id="indirectChip" class="chip">بر اساس میانه بخش/واحدهای انتخابی</span>
+      </div>
+      <div class="tablewrap">
+        <table id="indirectTable">
+          <thead>
+            <tr>
+              <th>عنوان شغلی</th>
+              <th>ضریب شغل</th>
+              <th>ضریب حضور (سقف 1.25 / کمک‌بهیار 2.0)</th>
+              <th>امتیاز نهایی (میانه بخش × شغل × حضور)</th>
+              <th class="fin-col" style="display:none">مبلغ برآورد ریالی</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- جدول عملکرد غیرمستقیم بیمارستانی -->
+      <div id="hospitalIndirectSection" style="margin-top:22px">
+        <div class="section-title">
+          <h2 style="margin:0">امتیاز مشاغل با عملکرد غیرمستقیم بیمارستانی (کل مرکز)</h2>
+          <span class="chip">صرفاً بر اساس میانه کل بخش‌های بیمارستان</span>
+        </div>
+        <div class="tablewrap">
+          <table id="hospitalIndirectTable">
+            <thead>
+              <tr>
+                <th>عنوان شغلی</th>
+                <th>ضریب شغل</th>
+                <th>ضریب حضور (سقف 1.25)</th>
+                <th>امتیاز نهایی (میانه کل مرکز × شغل × حضور)</th>
+                <th class="fin-col" style="display:none">مبلغ برآورد ریالی</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+  </section>
+</div>
+
+<script type="application/json" id="embeddedSettings">{}</script>
+
+<script src="./js/app.js"></script>
+</body>
+</html>

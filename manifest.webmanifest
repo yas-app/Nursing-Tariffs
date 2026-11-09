@@ -1,0 +1,17 @@
+{
+  "name": "محاسبه‌گر امتیاز و تعرفه‌گذاری پرستاری",
+  "short_name": "تعرفه پرستاری",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#143e79",
+  "icons": [
+    {
+      "src": "./assets/icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
