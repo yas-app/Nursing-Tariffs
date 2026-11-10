@@ -63,11 +63,17 @@ tr.row-excluded td.exclude-col{text-decoration:none}
  .print-only{display:block!important;margin-bottom:8px;font-weight:700;font-size:11px}
  .stats-table{max-width:none}.stats-table td{padding:4px 6px}.stats-table td:first-child{width:45%}.stats-table td:last-child{text-align:right}
  table{min-width:0;width:100%;font-size:9px}th,td{padding:4px 5px;white-space:normal;border:1px solid #aaa}th{background:#eee!important;color:#000}.tablewrap{overflow:visible;border:0}.section-title{margin-top:8px;break-after:avoid}h2{font-size:13px!important}.panel h2{font-size:13px!important}input,select{display:none!important}
- #results[data-print-mode="single"] #indirectSection{display:none!important}
- #results[data-print-mode="single"] #summaryTitle{display:block}
- #results[data-print-mode="single"] #statsSection{display:none!important}
- #results:not(.hide-print-detail) #detailSection{display:block!important}
- #results.hide-print-detail #detailSection{display:none!important}
+  /* انتخاب جدول‌ها برای چاپ (۲.۶.۲) */
+ #results.pp-hide-stats #statsSection,
+ #results.pp-hide-summary #summarySection,
+ #results.pp-hide-groups #groupSection,
+ #results.pp-hide-detail #detailSection,
+ #results.pp-hide-indirect #deptIndirectSection,
+ #results.pp-hide-hospital #hospitalIndirectSection{display:none!important}
+ #results.pp-show-detail #detailSection{display:block!important}
+ #results.pp-hide-indirect.pp-hide-hospital #indirectSection{display:none!important}
+ #results #hospitalIndirectSection{margin-top:0!important}
+ #printDialog{display:none!important}
  tbody tr:last-child td{border-bottom:1px solid #aaa!important}
  .tablewrap{padding:0!important;margin:0 0 8px!important;min-height:0!important;height:auto!important}
  table{margin:0!important;border-collapse:collapse!important;border-spacing:0!important}
@@ -641,3 +647,17 @@ tr.row-excluded td.exclude-col{text-decoration:none}
   #summaryTable td:first-child,
   #summaryTable .nurse-link-btn { transition: none !important; }
 }
+
+/* ===== پنجره انتخاب جدول برای چاپ – 2.6.2 ===== */
+.print-dialog{width:min(560px,calc(100% - 28px))}
+.print-quick{margin-bottom:10px;gap:8px}
+.print-quick button{padding:7px 12px;font-size:13px}
+.print-table-list{display:flex;flex-direction:column;gap:8px}
+.print-opt{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;cursor:pointer;line-height:1.6}
+.print-opt:hover{border-color:#b9d5ff;background:#f1f7ff}
+.print-opt input{width:19px;height:19px;flex:0 0 19px;accent-color:var(--blue);cursor:pointer}
+.print-opt span{font-weight:700;color:#243447}
+.print-opt small{color:var(--muted);font-size:12px}
+.print-opt.disabled{opacity:.55;cursor:not-allowed}
+.print-opt.disabled input{cursor:not-allowed}
+@media(max-width:640px){.print-dialog .dialog-foot .row{width:100%}.print-dialog .dialog-foot .row button{flex:1}}
