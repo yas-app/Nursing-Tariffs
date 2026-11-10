@@ -102,6 +102,15 @@ tr.row-excluded td.exclude-col{text-decoration:none}
   .dept-filter-bar { align-items: flex-start; }
 }
 
+
+/* Desktop summary names: show the source name exactly once. */
+#summaryTable .nurse-name-full { display: inline; }
+#summaryTable .nurse-name-surname { display: none; }
+#summaryTable .nurse-link-btn { white-space: nowrap; }
+.department-night-settings { grid-column: 1 / -1; margin-top: 8px; }
+.night-factor-toggle { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.night-factor-toggle input { width: 18px; height: 18px; accent-color: var(--blue); }
+
 @media (max-width: 640px) {
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body { overflow-x: hidden; font-size: 14px; }
@@ -584,6 +593,7 @@ tr.row-excluded td.exclude-col{text-decoration:none}
     transition: opacity .2s ease, visibility .2s ease;
   }
   #summaryTable .nurse-name-surname {
+    display: block;
     position: absolute;
     top: 50%;
     right: 0;
