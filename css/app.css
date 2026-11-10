@@ -60,7 +60,10 @@ tr.row-excluded td.exclude-col{text-decoration:none}
  .nurse-link-btn{color:#000!important;cursor:default!important}
  .warning-link-btn{color:#000!important;text-decoration:none!important;cursor:default!important}
  .quality-input, .attendance-input{border:0!important;background:none!important;padding:0!important;text-align:right!important;display:inline-block!important}
- tr.row-excluded td{color:#777!important;text-decoration:line-through!important}
+ /* پرسنل تیک‌خورده «حذف از میانه و آمار» در خروجی چاپ/PDF نمایش داده نمی‌شوند */
+ tr.row-excluded,tr.print-skip{display:none!important}
+ /* کپسول‌های توضیحی کنار عنوان جدول‌ها، ستون «وضعیت» و ردیف «موارد نیازمند بررسی» در چاپ حذف می‌شوند */
+ #results .chip,#results .status-col,#results .stat-review-row{display:none!important}
  .print-only{display:block!important;margin-bottom:8px;font-weight:700;font-size:11px}
  .stats-table{max-width:none}.stats-table td{padding:4px 6px}.stats-table td:first-child{width:45%}.stats-table td:last-child{text-align:right}
  table{min-width:0;width:100%;font-size:9px}th,td{padding:4px 5px;white-space:normal;border:1px solid #aaa}th{background:#eee!important;color:#000}.tablewrap{overflow:visible;border:0}.section-title{margin-top:8px;break-after:avoid}h2{font-size:13px!important}.panel h2{font-size:13px!important}input,select{display:none!important}
