@@ -3,9 +3,10 @@
 'use strict';
 const $=id=>document.getElementById(id);
 
-// کلید ذخیره‌سازی تنظیمات نسخه 2.6.1؛ تنظیمات نسخه‌های قبلی نیز بازیابی می‌شوند.
-const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_6_1:'+location.pathname;
+// کلید ذخیره‌سازی تنظیمات نسخه 2.6.2؛ تنظیمات نسخه‌های قبلی نیز بازیابی می‌شوند.
+const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_6_2:'+location.pathname;
 const PREV_SETTINGS_KEYS=[
+  'nursingPerformanceSettings_v2_6_1:'+location.pathname,
   'nursingPerformanceSettings_v2_6:'+location.pathname,
   'nursingPerformanceSettings_v2_5_3:'+location.pathname,
   'nursingPerformanceSettings_v2_5_1:'+location.pathname,
@@ -83,13 +84,14 @@ function loadSavedSettings(){
     }
   }catch(e){}
   if(!validSettings(v))v=readEmbeddedSettings();
-  if(!v)return {scores:scoreDefaults,shifts:shiftDefaults,enableFinancial:false,rialFactor:0,defaultQuality:1.0,attendanceFactors:{}};
+  if(!v)return {scores:scoreDefaults,shifts:shiftDefaults,enableFinancial:false,rialFactor:0,defaultQuality:1.0,attendanceFactors:{},nightBonusOffDepts:[]};
   return {
     ...v,
     enableFinancial:typeof v.enableFinancial==='boolean'?v.enableFinancial:false,
     rialFactor:Number(v.rialFactor)||0,
     defaultQuality:Number(v.defaultQuality)||1.0,
-    attendanceFactors:v.attendanceFactors||{}
+    attendanceFactors:v.attendanceFactors||{},
+    nightBonusOffDepts:Array.isArray(v.nightBonusOffDepts)?v.nightBonusOffDepts.map(String):[]
   };
 }
 
@@ -340,6 +342,11 @@ let scores=savedSettings.scores.map(x=>({name:String(x.name??''),score:x.score==
 let enableFinancial=savedSettings.enableFinancial;
 let rialFactor=savedSettings.rialFactor;
 let defaultQuality=savedSettings.defaultQuality;
+// بخش‌هایی که ضریب ۱٫۵ شیفت شب برای گروه‌های مراقبتی در آن‌ها اعمال نمی‌شود (کلید = نام نرمال‌شده بخش)
+const nightBonusOffDepts=new Map();
+for(const d of (savedSettings.nightBonusOffDepts||[])){const t=String(d).trim();if(t)nightBonusOffDepts.set(norm(t),t)}
+function deptLabel(d){return String(d||'').trim()||'بدون بخش'}
+function isNightBonusEnabled(dept){return !nightBonusOffDepts.has(norm(deptLabel(dept)))}
 
 if(savedSettings.attendanceFactors){
   for(const [k,v] of Object.entries(savedSettings.attendanceFactors)){
@@ -357,7 +364,8 @@ function persistSettings(){
       enableFinancial,
       rialFactor,
       defaultQuality,
-      attendanceFactors:attObj
+      attendanceFactors:attObj,
+      nightBonusOffDepts:[...nightBonusOffDepts.values()]
     }));
     saved=true;
   }catch(e){}
@@ -368,6 +376,7 @@ function persistSettings(){
 function renderSettings(){renderEditableRows('scoresTable',scores,'name','score');renderEditableRows('shiftsTable',shifts,'name','factor')}
 renderSettings();
 renderIndirect();
+renderNightDeptSettings();
 persistSettings();
 
 $('enableFinancial').checked=enableFinancial;
@@ -592,6 +601,7 @@ async function processFolder(){
   }
 
   renderDeptCapsules();
+  renderNightDeptSettings();
   renderReports();
   $('results').hidden=false;
   let summary=`پردازش با موفقیت تمام شد.\nفایل‌های دارای داده: ${totalBooks}\nفایل‌های خالی/ناخوانا: ${emptyBooks}\nرکوردهای استخراج‌شده: ${allRows.length}`;
@@ -605,13 +615,13 @@ $('calculate').addEventListener('click',async()=>{if(!selectedFiles.length)retur
 function fmt(n){if(n===null||n===undefined||!Number.isFinite(n))return '—';return n.toLocaleString('en-US',{maximumFractionDigits:4})}
 function careGroupNumber(group){const m=norm(group).match(/گروه\s*مراقبتی\s*([0-9۰-۹٠-٩]+)/);return m?num(m[1]):null}
 
-function getShiftFactor(group,shift){
+function getShiftFactor(group,shift,dept){
   const sh=norm(shift), g=careGroupNumber(group);
   if(sh===norm('عصر')){
     return g!==null&&g>=1&&g<=3?0.8:1;
   }
   if(sh===norm('شب')){
-    return (g!==null&&g>=1&&g<=8)?1.5:1;
+    return (g!==null&&g>=1&&g<=8&&isNightBonusEnabled(dept))?1.5:1;
   }
   const obj=shifts.find(x=>norm(x.name)===sh);
   return obj&&num(obj.factor)!==null?num(obj.factor):1;
@@ -620,13 +630,37 @@ function getShiftFactor(group,shift){
 function applyRowCalculation(row){
   const scoreObj=scores.find(x=>norm(x.name)===norm(row.group));
   row.score=scoreObj&&num(scoreObj.score)!==null?num(scoreObj.score):null;
-  row.factor=getShiftFactor(row.group,row.shift);
+  row.factor=getShiftFactor(row.group,row.shift,row.department);
   row.points=(row.amount!==null&&row.score!==null&&row.factor!==null)?row.amount*row.score*row.factor:null;
   const problems=[];
   if(row.amount===null)problems.push('مقدار نامعتبر');
   if(row.score===null)problems.push('گروه تعریف‌نشده: '+(row.group||'خالی'));
   if(row.factor===null)problems.push('شیفت تعریف‌نشده: '+(row.shift||'خالی'));
   row.status=problems.length?problems.join('؛ '):'OK';
+}
+
+function renderNightDeptSettings(){
+  const body=$('nightDeptTable')?.querySelector('tbody');
+  if(!body)return;
+  body.innerHTML='';
+  const names=new Map();
+  for(const r of allRows){const l=deptLabel(r.department);names.set(norm(l),l)}
+  for(const [k,v] of nightBonusOffDepts)if(!names.has(k))names.set(k,v);
+  const list=[...names.values()].sort((a,b)=>a.localeCompare(b,'fa'));
+  $('nightDeptEmpty').style.display=list.length?'none':'';
+  for(const name of list){
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td');td1.textContent=name;
+    const td2=document.createElement('td');td2.className='exclude-col';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=isNightBonusEnabled(name);
+    cb.setAttribute('aria-label','اعمال ضریب ۱٫۵ شب برای '+name);
+    cb.addEventListener('change',()=>{
+      if(cb.checked)nightBonusOffDepts.delete(norm(name));else nightBonusOffDepts.set(norm(name),name);
+      persistSettings();
+      if(allRows.length){allRows.forEach(applyRowCalculation);renderReports()}
+    });
+    td2.appendChild(cb);tr.append(td1,td2);body.appendChild(tr);
+  }
 }
 
 function getUniqueDepartments(){
