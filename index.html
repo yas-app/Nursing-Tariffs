@@ -33,7 +33,7 @@
   <header class="hero">
     <h1>
       <span>محاسبه‌گر امتیاز عملکرد و تعرفه‌گذاری پرستاری</span>
-      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ۲.۶.۲</span>
+      <span class="chip" style="background:#0f3567;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,0.3)">نسخه ۲.۶.۱</span>
     </h1>
   </header>
 
@@ -60,9 +60,9 @@
     <div class="rule-note">
       <strong>قوانین ضرایب شیفت و حضور طبق دستورالعمل:</strong>
       <ul style="margin:4px 0 0;padding-right:20px">
-        <li><strong>شیفت شب (ضریب ۱٫۵):</strong> فقط به گروه‌های مراقبتی ۱ تا ۸ تعلق می‌گیرد (بیماران تریاژ ضریب ۱ دارند).</li>
-        <li><strong>شیفت عصر (ضریب ۰٫۸):</strong> فقط به گروه‌های مراقبتی ۱ تا ۳ تعلق دارد؛ سایر گروه‌ها ضریب ۱ دارند.</li>
-        <li><strong>ضریب حضور عملکرد غیرمستقیم:</strong> برای رده‌های سرپرستار، استاف، سوپروایزرها و مترون در بازه <strong>۰ تا ۱٫۲۵</strong> و برای کمک‌پرستار/کمک‌بهیار در بازه <strong>۰ تا ۲٫۰</strong> اعمال می‌گردد.</li>
+        <li><strong>شیفت شب (ضریب ۱٫۵):</strong> گروه‌های مراقبتی 1 تا 8 — قابل غیرفعال‌سازی جداگانه برای هر بخش (از بخش «ضریب ۱٫۵ شیفت شب به تفکیک بخش» در پنجره تنظیمات)</li>
+        <li><strong>شیفت عصر (ضریب ۰٫۸):</strong> گروه‌های مراقبتی 1 تا 3</li>
+        <li><strong>ضریب حضور عملکرد غیرمستقیم:</strong> برای همه پرسنل غیرمستقیم در بازه <strong>۰ تا ۱٫۲۵</strong> و برای کمک‌پرستار/کمک‌بهیار در بازه <strong>۰ تا ۲</strong> اعمال می‌گردد.</li>
       </ul>
     </div>
   </section>
@@ -85,10 +85,10 @@
         <div class="section-title"><b>ضریب پایه شیفت‌ها</b><button id="addShift" type="button" class="secondary">+ افزودن شیفت</button></div>
         <div class="tablewrap"><table id="shiftsTable"><thead><tr><th>شیفت</th><th>ضریب پایه</th><th>حذف</th></tr></thead><tbody></tbody></table></div>
       </div>
-      <div class="department-night-settings">
-        <div class="section-title"><b>ضریب ۱٫۵ شیفت شب گروه‌های مراقبتی به تفکیک بخش</b></div>
-        <p class="sub">برای هر بخش می‌توانی اعمال ضریب ۱٫۵ را مستقل فعال یا غیرفعال کنی. حالت پیش‌فرض برای بخش‌های جدید فعال است.</p>
-        <div class="tablewrap"><table id="departmentNightTable"><thead><tr><th>بخش / واحد</th><th>اعمال ضریب ۱٫۵ شب</th></tr></thead><tbody></tbody></table><div id="departmentNightEmpty" class="empty">پس از بارگذاری فایل‌های عملکرد، فهرست بخش‌ها در این قسمت نمایش داده می‌شود.</div></div>
+      <div class="night-dept-box">
+        <div class="section-title"><b>ضریب ۱٫۵ شیفت شب به تفکیک بخش</b></div>
+        <p class="smallnote" style="margin:0 0 8px">برای بخش‌هایی که ضریب ۱٫۵ شب برای گروه‌های مراقبتی اجرا نمی‌شود، تیک را بردارید؛ امتیاز شب آن بخش بدون ضریب ۱٫۵ (ضریب ۱) محاسبه می‌شود. فهرست بخش‌ها پس از خواندن فایل‌ها نمایش داده می‌شود.</p>
+        <div class="tablewrap"><table id="nightDeptTable"><thead><tr><th>بخش</th><th>اعمال ضریب ۱٫۵ شب</th></tr></thead><tbody></tbody></table><div id="nightDeptEmpty" class="empty">هنوز فایلی پردازش نشده است.</div></div>
       </div>
     </div>
   </dialog>
