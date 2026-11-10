@@ -1156,8 +1156,6 @@ function renderReports(){
   renderStats(summaries,currentRows,selected,selectedRows);
   renderDetail(currentRows,selected);
   renderIndirect();
-  updatePrintDetailClass();
-  $('results').dataset.printMode=selected==='__ALL__'?'all':'single';
 }
 
 function renderDetail(currentRows,selected){
@@ -1247,25 +1245,102 @@ $('nurseSelect').addEventListener('change',renderReports);
 $('summarySort').addEventListener('change',renderReports);
 $('clearExclusions').addEventListener('click',()=>{excludedNurses.clear();renderReports()});
 
-function updatePrintDetailClass(){
-  if($('printDetailToggle').checked){
-    $('results').classList.remove('hide-print-detail');
-  }else{
-    $('results').classList.add('hide-print-detail');
-  }
-}
-$('printDetailToggle').addEventListener('change',updatePrintDetailClass);
+/* ===== انتخاب جدول‌ها برای چاپ / خروجی PDF (نسخه 2.6.2) ===== */
+const PRINT_TABLES=[
+  {key:'stats',label:'آمار توصیفی عملکرد',section:'statsSection',allOnly:false,def:true},
+  {key:'summary',label:'خلاصه امتیاز هر پرستار',section:'summarySection',allOnly:false,def:true},
+  {key:'groups',label:'آمار بخش‌ها / واحدها',section:'groupSection',allOnly:false,def:true},
+  {key:'detail',label:'جزئیات گروه و شیفت',section:'detailSection',allOnly:false,def:false},
+  {key:'indirect',label:'امتیاز کارکنان با عملکرد غیرمستقیم بخش',section:'deptIndirectSection',allOnly:false,def:true},
+  {key:'hospital',label:'امتیاز مشاغل با عملکرد غیرمستقیم بیمارستانی (کل مرکز)',section:'hospitalIndirectSection',allOnly:true,def:true}
+];
+const printDialog=$('printDialog');
+let printSelection=null; // انتخاب قبلی کاربر در همین نشست
 
-$('printReport').addEventListener('click',()=>{
+function isPrintTableAvailable(t){
+  const el=$(t.section);
+  if(!el)return false;
+  if(t.key==='hospital')return el.style.display!=='none';
+  return true;
+}
+function currentPrintChecks(){
+  return [...document.querySelectorAll('#printTableList input[type=checkbox]')];
+}
+function updatePrintDialogState(){
+  const boxes=currentPrintChecks().filter(b=>!b.disabled);
+  const n=boxes.filter(b=>b.checked).length;
+  $('printSelCount').textContent=n?`${n} جدول از ${boxes.length} جدول انتخاب شده است`:'هیچ جدولی انتخاب نشده است';
+  $('printConfirm').disabled=n===0;
+}
+function buildPrintDialog(){
+  const single=$('nurseSelect').value!=='__ALL__';
+  const list=$('printTableList');
+  list.innerHTML='';
+  for(const t of PRINT_TABLES){
+    const available=isPrintTableAvailable(t);
+    const lbl=document.createElement('label');
+    lbl.className='print-opt'+(available?'':' disabled');
+    const cb=document.createElement('input');
+    cb.type='checkbox';cb.value=t.key;cb.disabled=!available;
+    let checked=printSelection?printSelection.has(t.key):t.def;
+    // در حالت نمایش یک پرستار، جدول‌های کلی به‌صورت پیش‌فرض انتخاب نمی‌شوند.
+    if(!printSelection&&single&&['stats','indirect','hospital'].includes(t.key))checked=false;
+    cb.checked=available&&checked;
+    cb.addEventListener('change',updatePrintDialogState);
+    const span=document.createElement('span');
+    span.textContent=t.label;
+    lbl.appendChild(cb);lbl.appendChild(span);
+    if(!available){
+      const note=document.createElement('small');
+      note.textContent=t.key==='hospital'?'(فقط در حالت «همه بخش‌ها» در دسترس است)':'(در دسترس نیست)';
+      lbl.appendChild(note);
+    }
+    list.appendChild(lbl);
+  }
+  $('printDialogNote').textContent=single?'گزارش فعلی برای پرستار انتخاب‌شده است؛ جدول‌های خلاصه و جزئیات فقط شامل همان فرد خواهند بود.':'';
+  updatePrintDialogState();
+}
+function openPrintDialog(){
   if(!allRows.length)return;
   renderReports();
-  $('results').dataset.printMode=$('nurseSelect').value==='__ALL__'?'all':'single';
-  updatePrintDetailClass();
-  window.print();
+  buildPrintDialog();
+  if(typeof printDialog.showModal==='function')printDialog.showModal();else printDialog.setAttribute('open','open');
+}
+function closePrintDialog(){
+  if(typeof printDialog.close==='function')printDialog.close();else printDialog.removeAttribute('open');
+}
+function clearPrintSelectionClasses(){
+  const r=$('results');
+  for(const t of PRINT_TABLES){
+    r.classList.remove('pp-hide-'+t.key);
+  }
+  r.classList.remove('pp-show-detail');
+}
+function applyPrintSelection(selected){
+  const r=$('results');
+  clearPrintSelectionClasses();
+  for(const t of PRINT_TABLES){
+    if(!selected.has(t.key))r.classList.add('pp-hide-'+t.key);
+  }
+  if(selected.has('detail'))r.classList.add('pp-show-detail');
+}
+
+$('printReport').addEventListener('click',openPrintDialog);
+$('closePrintDialog').addEventListener('click',closePrintDialog);
+$('printCancel').addEventListener('click',closePrintDialog);
+printDialog.addEventListener('click',e=>{if(e.target===printDialog)closePrintDialog()});
+$('printSelectAll').addEventListener('click',()=>{currentPrintChecks().forEach(b=>{if(!b.disabled)b.checked=true});updatePrintDialogState()});
+$('printSelectNone').addEventListener('click',()=>{currentPrintChecks().forEach(b=>{b.checked=false});updatePrintDialogState()});
+$('printConfirm').addEventListener('click',()=>{
+  const selected=new Set(currentPrintChecks().filter(b=>b.checked&&!b.disabled).map(b=>b.value));
+  if(!selected.size)return;
+  printSelection=new Set(selected);
+  closePrintDialog();
+  applyPrintSelection(selected);
+  // کمی تأخیر تا بسته‌شدن پنجره و اعمال کلاس‌ها پیش از باز شدن پنجره چاپ انجام شود.
+  setTimeout(()=>window.print(),120);
 });
-window.addEventListener('afterprint',()=>{
-  $('results').dataset.printMode=$('nurseSelect').value==='__ALL__'?'all':'single';
-});
+window.addEventListener('afterprint',clearPrintSelectionClasses);
 
 function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
 function downloadCsv(filename,rows){const csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
