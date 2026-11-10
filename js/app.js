@@ -984,12 +984,12 @@ function configureSummaryNameColumn(){
 
   if(!wrap.dataset.summaryNameScrollBound){
     wrap.addEventListener('scroll',()=>{
-      const isMobile=window.matchMedia('(max-width: 640px)').matches;
+      const isMobile=window.matchMedia('screen and (max-width: 640px)').matches;
       const hasMoved=Math.abs(wrap.scrollLeft)>3;
       wrap.classList.toggle('summary-name-compact',isMobile&&hasMoved);
     },{passive:true});
     window.addEventListener('resize',()=>{
-      if(!window.matchMedia('(max-width: 640px)').matches){
+      if(!window.matchMedia('screen and (max-width: 640px)').matches){
         wrap.classList.remove('summary-name-compact');
         wrap.style.removeProperty('--summary-name-expanded-width');
         wrap.style.removeProperty('--summary-name-compact-width');
@@ -1001,7 +1001,7 @@ function configureSummaryNameColumn(){
   }
 
   function measureSummaryNameWidths(){
-    if(!window.matchMedia('(max-width: 640px)').matches){
+    if(!window.matchMedia('screen and (max-width: 640px)').matches){
       wrap.classList.remove('summary-name-compact');
       wrap.style.removeProperty('--summary-name-expanded-width');
       wrap.style.removeProperty('--summary-name-compact-width');
@@ -1297,7 +1297,7 @@ function buildPrintDialog(){
     }
     list.appendChild(lbl);
   }
-  $('printDialogNote').textContent=single?'گزارش فعلی برای پرستار انتخاب‌شده است؛ جدول‌های خلاصه و جزئیات فقط شامل همان فرد خواهند بود.':'';
+  $('printDialogNote').textContent=(single?'گزارش فعلی برای پرستار انتخاب‌شده است؛ جدول‌های خلاصه و جزئیات فقط شامل همان فرد خواهند بود. ':'')+'اندازه و جهت کاغذ را در پنجره چاپ مرورگر انتخاب کنید؛ جدول‌ها خودکار با آن متناسب می‌شوند.';
   updatePrintDialogState();
 }
 function openPrintDialog(){
