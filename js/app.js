@@ -842,12 +842,12 @@ function renderStats(summaries,currentRows,selected,selectedRows){
     btn.textContent=`${warnings.length.toLocaleString('en-US')} مورد (کلیک جهت مشاهده ریز خطاها)`;
     btn.title='نمایش جزئیات رکوردهای نیازمند بررسی';
     btn.addEventListener('click',()=>openWarningsModal(warnings));
-    appendStatRow(body,'موارد نیازمند بررسی / هشدارها',btn,true,'warning-stat-row');
+    appendStatRow(body,'موارد نیازمند بررسی / هشدارها',btn,true,'warning-stat-row stat-review-row');
   }else{
     const span=document.createElement('span');
     span.className='good';
     span.textContent='۰ (بدون خطا و تأیید کامل)';
-    appendStatRow(body,'موارد نیازمند بررسی / هشدارها',span,true);
+    appendStatRow(body,'موارد نیازمند بررسی / هشدارها',span,true,'stat-review-row');
   }
 }
 
@@ -1133,7 +1133,7 @@ function renderReports(){
       tr.appendChild(tdMoney);
     }
 
-    makeCell(tr,isExcluded?'حذف‌شده از محاسبات':(x.warnings?`${x.warnings} مورد بررسی`:'تأیید'),isExcluded?'bad':(x.warnings?'bad':'good'));
+    makeCell(tr,isExcluded?'حذف‌شده از محاسبات':(x.warnings?`${x.warnings} مورد بررسی`:'تأیید'),(isExcluded?'bad':(x.warnings?'bad':'good'))+' status-col');
 
     const excludeTd=makeCell(tr,'','exclude-col');
     excludeTd.style.textAlign='center';
@@ -1234,6 +1234,7 @@ function renderDetail(currentRows,selected){
   }
   for(const x of map.values()){
     const tr=document.createElement('tr');
+    if(excludedNurses.has(x.nurse))tr.className='print-skip';
     [x.nurse||'—',x.department||'—',x.group||'—',x.shift||'—',fmt(x.amount),fmt(x.score),fmt(x.factor),fmt(x.points),x.count].forEach(v=>makeCell(tr,v));
     body.appendChild(tr);
   }
