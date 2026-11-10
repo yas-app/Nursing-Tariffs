@@ -102,15 +102,6 @@ tr.row-excluded td.exclude-col{text-decoration:none}
   .dept-filter-bar { align-items: flex-start; }
 }
 
-
-/* Desktop summary names: show the source name exactly once. */
-#summaryTable .nurse-name-full { display: inline; }
-#summaryTable .nurse-name-surname { display: none; }
-#summaryTable .nurse-link-btn { white-space: nowrap; }
-.department-night-settings { grid-column: 1 / -1; margin-top: 8px; }
-.night-factor-toggle { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-.night-factor-toggle input { width: 18px; height: 18px; accent-color: var(--blue); }
-
 @media (max-width: 640px) {
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body { overflow-x: hidden; font-size: 14px; }
@@ -464,8 +455,8 @@ tr.row-excluded td.exclude-col{text-decoration:none}
 
 
 /* ======================================================================
-   Release 2.6.1 – compact mobile presentation refinements
-   Calculations, source data, and desktop report layout remain unchanged.
+   Release 2.6.2 – desktop nurse-name fix + per-department night bonus setting
+   (builds on 2.6.1 compact mobile presentation refinements).
    ====================================================================== */
 .stage-heading {
   display: flex;
@@ -474,6 +465,11 @@ tr.row-excluded td.exclude-col{text-decoration:none}
   gap: 4px 9px;
 }
 .stage-heading-main { min-width: 0; }
+
+/* Desktop: show only the full name; the surname-only variant is used on phones only. */
+#summaryTable .nurse-name-surname { display: none; }
+#nightDeptTable { min-width: 0; }
+.night-dept-box { min-width: 0; }
 .stage-format {
   color: var(--muted);
   font-size: 11px;
@@ -593,7 +589,6 @@ tr.row-excluded td.exclude-col{text-decoration:none}
     transition: opacity .2s ease, visibility .2s ease;
   }
   #summaryTable .nurse-name-surname {
-    display: block;
     position: absolute;
     top: 50%;
     right: 0;
