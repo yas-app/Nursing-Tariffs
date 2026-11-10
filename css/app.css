@@ -309,11 +309,25 @@ tr.row-excluded td.exclude-col{text-decoration:none}
 
   /* Settings tables are intentionally kept fully visible without horizontal scrolling. */
   #scoresTable,
-  #shiftsTable {
+  #shiftsTable,
+  #nightDeptTable {
     width: 100%;
     min-width: 100%;
     table-layout: fixed;
   }
+  /* Per-department night-bonus table: fully visible on phones, no horizontal scroll. */
+  #nightDeptTable th:first-child,
+  #nightDeptTable td:first-child {
+    position: static;
+    box-shadow: none;
+    width: 62%;
+    white-space: normal;
+    line-height: 1.6;
+  }
+  #nightDeptTable th:last-child,
+  #nightDeptTable td:last-child { width: 38%; text-align: center; }
+  #nightDeptTable th { white-space: normal; }
+  #nightDeptTable td.exclude-col input { width: 20px; min-width: 20px; height: 20px; }
   #scoresTable th,
   #scoresTable td,
   #shiftsTable th,
