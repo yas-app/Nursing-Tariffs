@@ -3,9 +3,10 @@
 'use strict';
 const $=id=>document.getElementById(id);
 
-// کلید ذخیره‌سازی تنظیمات نسخه 2.6.2؛ تنظیمات نسخه‌های قبلی نیز بازیابی می‌شوند.
-const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_6_2:'+location.pathname;
+// کلید ذخیره‌سازی تنظیمات نسخه 2.6.3؛ تنظیمات نسخه‌های قبلی نیز بازیابی می‌شوند.
+const SETTINGS_STORAGE_KEY='nursingPerformanceSettings_v2_6_3:'+location.pathname;
 const PREV_SETTINGS_KEYS=[
+  'nursingPerformanceSettings_v2_6_2:'+location.pathname,
   'nursingPerformanceSettings_v2_6_1:'+location.pathname,
   'nursingPerformanceSettings_v2_6:'+location.pathname,
   'nursingPerformanceSettings_v2_5_3:'+location.pathname,
@@ -1154,11 +1155,11 @@ function renderReports(){
   configureSummaryNameColumn();
 
   renderStats(summaries,currentRows,selected,selectedRows);
-  renderDetail(currentRows,selected);
+  renderDetail(currentRows,selected,shown.map(x=>x.nurse));
   renderIndirect();
 }
 
-function renderDetail(currentRows,selected){
+function renderDetail(currentRows,selected,nurseOrder){
   const rows=selected==='__ALL__'?currentRows:currentRows.filter(r=>r.nurse===selected);
   $('groupSummaryTitle').textContent=selected==='__ALL__'?'آمار بخش‌ها / واحدها':'آمار واحدها ـ '+selected;
   const groupBody=$('groupSummaryTable').querySelector('tbody');
@@ -1232,7 +1233,21 @@ function renderDetail(currentRows,selected){
     x.count++;
     if(r.points!==null)x.points+=r.points;
   }
+  // نسخه 2.6.3: تمام ردیف‌های هر فرد کنار هم و به ترتیب جدول خلاصه (مرتب‌سازی انتخاب‌شده در صفحه اصلی)
+  const byNurse=new Map();
   for(const x of map.values()){
+    if(!byNurse.has(x.nurse))byNurse.set(x.nurse,[]);
+    byNurse.get(x.nurse).push(x);
+  }
+  const orderedNurses=[];
+  for(const n of (nurseOrder||[])){
+    if(byNurse.has(n)&&!orderedNurses.includes(n))orderedNurses.push(n);
+  }
+  for(const n of byNurse.keys()){
+    if(!orderedNurses.includes(n))orderedNurses.push(n);
+  }
+  const orderedItems=orderedNurses.flatMap(n=>byNurse.get(n));
+  for(const x of orderedItems){
     const tr=document.createElement('tr');
     if(excludedNurses.has(x.nurse))tr.className='print-skip';
     [x.nurse||'—',x.department||'—',x.group||'—',x.shift||'—',fmt(x.amount),fmt(x.score),fmt(x.factor),fmt(x.points),x.count].forEach(v=>makeCell(tr,v));
@@ -1246,7 +1261,7 @@ $('nurseSelect').addEventListener('change',renderReports);
 $('summarySort').addEventListener('change',renderReports);
 $('clearExclusions').addEventListener('click',()=>{excludedNurses.clear();renderReports()});
 
-/* ===== انتخاب جدول‌ها برای چاپ / خروجی PDF (نسخه 2.6.2) ===== */
+/* ===== انتخاب جدول‌ها برای چاپ / خروجی PDF (نسخه 2.6.3) ===== */
 const PRINT_TABLES=[
   {key:'stats',label:'آمار توصیفی عملکرد',section:'statsSection',allOnly:false,def:true},
   {key:'summary',label:'خلاصه امتیاز هر پرستار',section:'summarySection',allOnly:false,def:true},
